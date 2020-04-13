@@ -37,7 +37,7 @@ const LineCut = class {
     }
 
     getBestSchema(line){
-        let best = (this.getAllChains(line).sort((a,b) => b.len - a.len))[0];
+        let best = (this.getAllChains(line).reverse().sort((a,b) => b.len - a.len))[0];
         let curId = -1;
         let curNum = 0;
         let schema = {usages: []};
@@ -117,6 +117,6 @@ const LineCut = class {
 
 }
 
-let cut = new LineCut([[400,40],[300,50], [280,20]], 2700, 4);
+let cut = new LineCut([[401,40],[300,4], [200,20], [700,2]], 2700, 0);
 
-console.log(cut.getLongSchema(2800));
+console.log(cut.getBestSchema(1200).usages);
