@@ -33,10 +33,10 @@ const LineCut = class {
     
         getChains(this.fit(line), line, 0, []);
     
-        return variants.map(v => {return {items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}});
+        return variants.map(v => ({items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}));
     }
 
-    getBestChain(line){
+    getBestSchema(line){
         let best = (this.getAllChains(line).sort((a,b) => b.len - a.len))[0];
         let curId = -1;
         let curNum = 0;
@@ -64,7 +64,7 @@ const LineCut = class {
 
     getLongSchema(line){
         let longest = this.longest(line);
-        let best = this.getBestChain(line - longest.size - this.saw);
+        let best = this.getBestSchema(line - longest.size - this.saw);
         best.totLen += longest.size + this.saw;
         best.usedLen += longest.size + this.saw;
         best.usages[best.usages.length-1].detail == longest ? best.usages[best.usages.length-1].num++ :best.usages.push({detail : longest, num : 1});
