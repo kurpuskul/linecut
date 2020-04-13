@@ -38,23 +38,15 @@ const LineCut = class {
 
     getBestSchema(line){
         let best = (this.getAllChains(line).reverse().sort((a,b) => b.len - a.len))[0];
-        let curId = -1;
-        let curNum = 0;
+        let curDet = null;
         let schema = {usages: []};
         best.items.forEach(putToSchema);
-        function putToSchema(d , i, arr){
-            if(d.id != curId){
-                if(curNum > 0){
-                    schema.usages.push({detail : d, num : curNum});  
-                }
-                curId = d.id;
-                curNum = 1;
+        function putToSchema(d, i, arr){
+            if(d != curDet){
+                schema.usages.push({detail: d, num: 1});
+                curDet = d;
             } else {
-                curNum++;
-            }
-
-            if(i == arr.length -1){
-                schema.usages.push({detail : d, num : curNum});
+                schema.usages.find(u => u.detail == d).num++;
             }
         }
         schema.totLen = line;
@@ -64,10 +56,12 @@ const LineCut = class {
 
     getLongSchema(line){
         let longest = this.longest(line);
+        longest.take(1);
         let best = this.getBestSchema(line - longest.size - this.saw);
+        longest.turn(1);
         best.totLen += longest.size + this.saw;
         best.usedLen += longest.size + this.saw;
-        best.usages[best.usages.length-1].detail == longest ? best.usages[best.usages.length-1].num++ :best.usages.push({detail : longest, num : 1});
+        best.usages[0].detail == longest ? best.usages[0].num++ :best.usages.push({detail : longest, num : 1});
         return best;
     }
     
@@ -117,6 +111,6 @@ const LineCut = class {
 
 }
 
-let cut = new LineCut([[401,40],[300,4], [200,20], [700,2]], 2700, 0);
+let cut = new LineCut([[400,2],[300,4], [200,20], [600,1]], 2700, 0);
 
-console.log(cut.getBestSchema(1200).usages);
+console.log(cut.getLongSchema(1200).usages);
