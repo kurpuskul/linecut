@@ -1,6 +1,6 @@
 const LineCut = class {
 
-    constructor(details, basis, saw, ends, stores = [], bfirst = false){
+    constructor(details, basis, saw, ends = 0, stores = [], bfirst = false){
         this.details = this.getDetails(details);
         this.basis = basis;
         this.saw = saw;
@@ -11,29 +11,45 @@ const LineCut = class {
     }
     
     getAllChains(line){
-        let variants = [];
+        let chains = [];
     
         let getChains = (details, sum, lastIndex, chain) => {
-            if(chain.length > 0){
-                variants.push(chain);
-            } else if(sum == 0){
-                variants.push(chain);
-                return;
+            if(chain.length != 0){
+                chains.push(chain);
             }
     
             for(let i = lastIndex; i < details.length; i++){
-                if(details[i].size > sum || details[i].curNum == 0) break;
-                details[i].curNum--;
+                if(details[i].size > sum || details[i].curNum == 0) continue;
+
+                details[i].take();
+
                 let curChain = [...chain];
                 curChain.push(details[i]);
                 getChains(details, sum - details[i].size - this.saw, i, curChain);
-                details[i].curNum++;
+
+                details[i].give();
+
             }
         }
     
-        getChains(this.fit(line), line, 0, []);
+        getChains(this.fitTo(line), line, 0, []);
     
-        return variants.map(v => ({items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}));
+        return chains.map(v => ({items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}));
+    }
+
+    getBestChains(line, deviation = 0){
+        // Getting set of chains for the line length
+        let allChains = this.getAllChains(line);
+        // Taking longest chain length of the set
+        let longestLen = allChains.sort((a,b) => b.len - a.len)[0].len;
+        // Keep only best chains by length according to deviation of longest one
+        let longestChains = allChains.filter(chain => chain.len >= longestLen - deviation);
+        // Sort items (details) inside chains by length (longest first)
+        longestChains.forEach(chain => {
+            chain.items.sort((a,b) => b.size - a.size);
+        })
+        // Returning a chain that contains longest details inside by comparing one by one from start (using string comparing by symbols and filling to 6 ones by 0)
+        return longestChains.sort((a,b) => a.items.map(i => this.fillByZero(i.size)).join() > b.items.map(i => this.fillByZero(i.size)).join() ? -1 : 1)[0];
     }
 
     getBestSchema(line){
@@ -55,10 +71,10 @@ const LineCut = class {
     }
 
     getLongSchema(line){
-        let longest = this.longest(line);
-        longest.take(1);
+        let longest = this.getLongest(line);
+        longest.take();
         let best = this.getBestSchema(line - longest.size - this.saw);
-        longest.turn(1);
+        longest.give();
         best.totLen += longest.size + this.saw;
         best.usedLen += longest.size + this.saw;
         best.usages[0].detail == longest ? best.usages[0].num++ :best.usages.push({detail : longest, num : 1});
@@ -75,21 +91,19 @@ const LineCut = class {
             this.id = id;
         }
     
-        take(num){
+        take(num = 1){
             if(this.curNum - num >= 0){
                 this.curNum -= num;
             } else {
-                console.log(`Can't take so much`);
-                return false;
+                console.error(`Can't take so much`);
             }
         }
     
-        turn(num){
+        give(num = 1){
             if(this.curNum + num <= this.initNum){
                 this.curNum += num;
             } else {
-                console.log(`Can't turn so much`);
-                return false;
+                console.error(`Can't turn so much`);
             }
         }
     }
@@ -98,12 +112,16 @@ const LineCut = class {
         return detailsArr.map((d, i) => new this.detailClass(d[0], d[1], i)).sort((a,b) => a.size - b.size);
     }
 
-    fit(line){
+    fitTo(line){
         return this.details.filter(d => d.size <= line && d.curNum > 0);
     }
 
-    longest(line){
-        return this.fit(line).sort((a,b) => b.size - a.size)[0];
+    getLongest(line){
+        return this.fitTo(line).sort((a,b) => b.size - a.size)[0];
+    }
+
+    fillByZero(size){
+        return '0'.repeat(6 - size.toString().length) + size;
     }
 
 
@@ -111,6 +129,10 @@ const LineCut = class {
 
 }
 
-let cut = new LineCut([[400,2],[300,4], [200,20], [600,1]], 2700, 0);
+let cut = new LineCut([[400,1],[300,1],[200,20],[600,1],[580,2],[400,675],[300,900],[200,2000]], 2700, 0);
 
-console.log(cut.getLongSchema(1200).usages);
+console.time('getBestChains');
+
+console.log(cut.getBestChains(1200, 0).items.map(item => item.size));
+
+console.timeEnd('getBestChains');

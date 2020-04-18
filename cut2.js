@@ -62,7 +62,7 @@ const LineCut = class {
         return schema;
     }
 
-    getSchema(line){
+    getLongSchema(line){
         let longest = this.longest(line);
         let best = this.getBestChain(line - longest.size - this.saw);
         best.totLen += longest.size + this.saw;
@@ -119,5 +119,5 @@ const LineCut = class {
 
 let cut = new LineCut([[400,40],[300,50], [280,20]], 2700, 4);
 
-console.log(cut.getSchema(2800));
+console.log(cut.getLongSchema(2800));
 
