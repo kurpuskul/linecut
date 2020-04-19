@@ -11,29 +11,34 @@ const LineCut = class {
     }
     
     getAllChains(line){
+            // Preparing an array for chains [details]
         let chains = [];
-    
+            // Recursive function to create tree of variations 
         let getChains = (details, sum, lastIndex, chain) => {
+                // Chain from previous iteration of getChains
             if(chain.length != 0){
                 chains.push(chain);
             }
-    
+                // Iterate recursively itself for all detail from the shortest one
+                // ... on each step starting with last used detail
             for(let i = lastIndex; i < details.length; i++){
+                    // Out of current iteration if left length of line is smaller than current detail
+                    // ... or current detail doesn't have enough num to take
                 if(details[i].size > sum || details[i].curNum == 0) continue;
 
                 details[i].take();
-
+                    // Coping the chain (to keep all variants)
                 let curChain = [...chain];
                 curChain.push(details[i]);
+                    // Calling with new length left and current chain copy
                 getChains(details, sum - details[i].size - this.saw, i, curChain);
 
                 details[i].give();
-
             }
         }
-    
+            // Starting recursive function with array of details fit to the line length
         getChains(this.fitTo(line), line, 0, []);
-    
+            // returning structured chains : {items : details, len : sum of detail lengths with whole saw amount}
         return chains.map(v => ({items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}));
     }
 
