@@ -11,6 +11,10 @@ const LineCut = class {
     }
     
     getAllChains(line){
+            // Get all details that fit to length of the line
+        let fitDetails = this.fitTo(line);
+            // If there is no details to cut return false immediately
+        if(!fitDetails) return false;
             // Preparing an array for chains [details]
         let chains = [];
             // Recursive function to create tree of variations 
@@ -42,36 +46,43 @@ const LineCut = class {
         return chains.map(v => ({items : v, len : v.reduce((a,b) => a + b.size + this.saw, -this.saw)}));
     }
 
-    getBestChains(line, deviation = 0){
-        // Getting set of chains for the line length
+    getBestChain(line, deviation = 0){
+            // Getting set of chains for the line length
         let allChains = this.getAllChains(line);
-        // Taking longest chain length of the set
+            // Check if there chains to sort are
+        if(!allChains) return false;
+            // Taking longest chain length of the set
         let longestLen = allChains.sort((a,b) => b.len - a.len)[0].len;
-        // Keep only best chains by length according to deviation of longest one
+            // Keep only best chains by length according to deviation of longest one
         let longestChains = allChains.filter(chain => chain.len >= longestLen - deviation);
-        // Sort items (details) inside chains by length (longest first)
+            // Sort items (details) inside chains by length (longest first)
         longestChains.forEach(chain => {
             chain.items.sort((a,b) => b.size - a.size);
         })
-        // Returning a chain that contains longest details inside by comparing one by one from start (using string comparing by symbols and filling to 6 ones by 0)
+            // Returning a chain that contains longest details inside by comparing one by one from start (using string comparing by symbols and filling to 6 ones by 0)
         return longestChains.sort((a,b) => a.items.map(i => this.fillByZero(i.size)).join() > b.items.map(i => this.fillByZero(i.size)).join() ? -1 : 1)[0];
     }
 
     getBestSchema(line){
-        let best = (this.getAllChains(line).reverse().sort((a,b) => b.len - a.len))[0];
-        let curDet = null;
+        let bestChain = this.getBestChain(line, 0);
+        if(!bestChain) return false;
+
+
         let schema = {usages: []};
-        best.items.forEach(putToSchema);
-        function putToSchema(d, i, arr){
-            if(d != curDet){
-                schema.usages.push({detail: d, num: 1});
-                curDet = d;
+
+        let currentDetail = null;
+        let putToSchema = (detail) => {
+            if(detail != currentDetail){
+                schema.usages.push({detail: detail, num: 1});
+                currentDetail = detail;
             } else {
-                schema.usages.find(u => u.detail == d).num++;
+                schema.usages.find(u => u.detail == detail).num++;
             }
         }
-        schema.totLen = line;
-        schema.usedLen = best.len;
+        bestChain.items.forEach(putToSchema);
+
+        schema.totalLen = line;
+        schema.usedLen = bestChain.len;
         return schema;
     }
 
@@ -118,7 +129,9 @@ const LineCut = class {
     }
 
     fitTo(line){
-        return this.details.filter(d => d.size <= line && d.curNum > 0);
+        let fitDetails = this.details.filter(d => d.size <= line && d.curNum > 0);
+        if(!fitDetails.length) return false;
+        return fitDetails;
     }
 
     getLongest(line){
@@ -134,10 +147,11 @@ const LineCut = class {
 
 }
 
-let cut = new LineCut([[400,1],[300,1],[200,20],[600,1],[580,2],[400,675],[300,900],[200,2000]], 2700, 0);
+let cut = new LineCut([[400,1],[300,1],[200,20],[600,2],[580,2],[422,6],[300,9],[200,20],[368,5],[420,6],[359,9],[468,20],[825,5]], 2700, 4);
 
-console.time('getBestChains');
+console.time('getBestChain');
 
-console.log(cut.getBestChains(1200, 0).items.map(item => item.size));
+console.log(cut.getBestSchema(3000,20));
 
-console.timeEnd('getBestChains');
+console.timeEnd('getBestChain');
+
